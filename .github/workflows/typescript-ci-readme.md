@@ -1,0 +1,262 @@
+# TypeScript CI/CD Pipeline Configuration Guide
+
+This guide explains how to configure the reusable TypeScript CI/CD pipeline in another repository.
+
+## 📋 Table of Contents
+
+1. [Overview](#overview)
+2. [Prerequisites](#prerequisites)
+3. [Pipeline Structure](#pipeline-structure)
+4. [Step-by-Step Configuration](#step-by-step-configuration)
+5. [Usage Example](#usage-example)
+6. [Pipeline Behavior](#pipeline-behavior)
+
+## 🎯 Overview
+
+This reusable pipeline provides:
+- ✅ Automated build and tests
+- 🔍 Code analysis with SonarCloud
+- 🐳 Docker image build and push
+- 🏷️ Automatic versioning with tags
+- 📦 Publishing to Azure Container Registry
+
+## 📦 Prerequisites
+
+### In the Target Repository
+
+1. **TypeScript Project** with:
+   - Configured `package.json`
+   - Present `tsconfig.json`
+   - Required npm scripts:
+     ```json
+     {
+       "scripts": {
+         "build": "tsc",
+         "lint": "eslint src --ext .ts,.tsx",
+         "test": "jest"
+       }
+     }
+     ```
+
+2. **Dockerfile** in the project root or custom path
+
+3. **Directory structure**:
+   ```
+   your-repository/
+   ├── src/           # TypeScript source code
+   ├── dist/          # Build output (generated)
+   ├── Dockerfile     # Docker configuration
+   ├── package.json   # Node.js dependencies
+   ├── tsconfig.json  # TypeScript configuration
+   └── .github/
+       └── workflows/
+           └── ci.yml # File that calls the pipeline
+   ```
+
+
+## 🏗️ Pipeline Structure
+
+The pipeline is divided into 3 main jobs:
+
+### 1. **Build** 
+- Code checkout
+- Node.js setup
+- Dependencies installation
+- Linter execution (ESLint)
+- Type checking (TypeScript)
+- Application build
+- Artifacts upload
+
+### 2. **SonarQube**
+- Static code analysis
+- Quality gates verification
+- Vulnerabilities and code smells report
+
+### 3. **Docker**
+- Docker image build
+- Automatic tag generation (based on date/time)
+- Push to Azure Container Registry (main branch)
+- Build validation in Pull Requests
+
+## 🔧 Step-by-Step Configuration
+
+### Step 1: Copy the Pipeline File
+
+1. Copy the `typescript-ci-file.yml` file to the template repository (this repository)
+2. Place it in: `.github/workflows/typescript-ci-file.yml`
+
+### Step 2: Create Workflow in Target Repository
+
+In your target repository, create the file `.github/workflows/ci.yml`:
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  NODE_VERSION: '20'  # Node.js version
+
+jobs:
+  pipeline:
+    name: Run TypeScript Pipeline
+    uses: YOUR-USERNAME/final-challenge-grupo-118-template-pipeline/.github/workflows/typescript-ci-file.yml@main
+    with:
+      sonar-project-key: 'your-org_your-project'
+      sonar-organization: 'your-organization'
+      sonar-host-url: 'https://sonarcloud.io'
+      dockerfile-path: './Dockerfile'
+      image-name: 'your-app-name'
+      default-branch: 'main'
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+      ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+```
+
+**⚠️ Important**: Replace `YOUR-USERNAME` with the user/organization where this template repository is located.
+
+### Step 3: Configure Secrets in GitHub
+
+In the target repository, go to **Settings → Secrets and variables → Actions** and add:
+
+#### Required Secrets:
+
+| Secret | Description | How to Obtain |
+|--------|-----------|------------|
+| `SONAR_TOKEN` | SonarCloud authentication token | SonarCloud → My Account → Security → Generate Token |
+| `ACR_USERNAME` | Azure Container Registry username | Azure Portal → Container Registry → Access Keys |
+| `ACR_PASSWORD` | Azure Container Registry password | Azure Portal → Container Registry → Access Keys |
+| `ACR_REGISTRY` | Registry URL (e.g., `myregistry.azurecr.io`) | Azure Portal → Container Registry → Login Server |
+
+#### Optional Secrets:
+
+| Secret | Description | When Needed |
+|--------|-----------|-------------------|
+| `DOCKER_USERNAME` | Docker Hub username | If using Docker Hub as well |
+| `DOCKER_PASSWORD` | Docker Hub password | If using Docker Hub as well |
+
+
+### Step 6: Adjust package.json
+
+Make sure your `package.json` has the necessary scripts:
+
+```json
+{
+  "name": "your-project",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "jest",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+
+## 📝 Complete Usage Example
+
+### Target Repository Structure
+
+```
+my-typescript-project/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                    # Calls the reusable pipeline
+├── src/
+│   ├── index.ts
+│   └── controllers/
+│       └── UserController.ts
+├── dist/                              # Generated by build
+├── Dockerfile
+├── package.json
+├── tsconfig.json
+├── .eslintrc.json
+└── README.md
+```
+
+### Complete ci.yml File
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  typescript-pipeline:
+    name: TypeScript CI/CD
+    uses: your-username/final-challenge-grupo-118-template-pipeline/.github/workflows/typescript-ci-file.yml@main
+    with:
+      sonar-project-key: 'my-org_my-typescript-project'
+      sonar-organization: 'my-org'
+      sonar-host-url: 'https://sonarcloud.io'
+      dockerfile-path: './Dockerfile'
+      image-name: 'my-typescript-project'
+      default-branch: 'main'
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+      ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+```
+
+## 🎯 Pipeline Behavior
+
+### In Pull Requests
+- ✅ Executes build and tests
+- ✅ Executes SonarCloud analysis
+- ✅ Validates Dockerfile (build without push)
+- ❌ Does not create tags
+- ❌ Does not push images
+
+### In Push to Main
+- ✅ Executes build and tests
+- ✅ Executes SonarCloud analysis
+- ✅ Creates automatic tag in format `YYYY.MM.DD.HHMMSS`
+- ✅ Builds Docker image
+- ✅ Pushes to Azure Container Registry with tags:
+  - `latest`
+  - `YYYY.MM.DD.HHMMSS`
+
+### In Push to Develop
+- ✅ Executes build and tests
+- ✅ Executes SonarCloud analysis
+- ✅ Builds Docker image
+- ✅ Pushes to Azure Container Registry
+- ❌ Does not create Git tags
+
+---
+
+**Last updated**: March 2026
+
+
+
+
