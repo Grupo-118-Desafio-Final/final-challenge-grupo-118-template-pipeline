@@ -131,6 +131,7 @@ jobs:
           args: >
             -Dsonar.projectKey=${{ inputs.sonar-project-key }}
             -Dsonar.projectName=${{ inputs.sonar-project-key }}
+            -Dsonar.organization=${{ inputs.sonar-organization }}
             -Dsonar.sources=src
             -Dsonar.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/node_modules/**,**/dist/**
             -Dsonar.typescript.tsconfigPath=tsconfig.json
