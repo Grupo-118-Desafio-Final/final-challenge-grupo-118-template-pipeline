@@ -172,12 +172,6 @@ jobs:
           git tag $PACKAGE_VERSION
           git push origin $PACKAGE_VERSION
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
       - name: Extract metadata
         if: (github.ref == 'refs/heads/main') && github.event_name == 'push'
         id: meta
@@ -200,6 +194,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           file: ${{ inputs.dockerfile-path }}
+
+      - name: Log in to Azure Container Registry
+        if: (github.ref == 'refs/heads/main') && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
           
       - name: Log in to Azure Container Registry
         if: (github.ref == 'refs/heads/main') && github.event_name == 'push'
