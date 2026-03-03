@@ -169,8 +169,8 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git tag $PACKAGE_VERSION
-          git push origin $PACKAGE_VERSION
+          git tag ${{ env.PACKAGE_VERSION }}
+          git push origin ${{ env.PACKAGE_VERSION }}
 
       - name: Extract metadata
         if: (github.ref == 'refs/heads/main') && github.event_name == 'push'
@@ -179,7 +179,7 @@ jobs:
         with:
           images: ${{ secrets.ACR_REGISTRY }}/${{ inputs.image-name }}
           tags: |
-            type=raw,value=$PACKAGE_VERSION,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+            type=raw,value=${{ env.PACKAGE_VERSION }},enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
             type=ref,event=pr
             type=sha,enable=${{ github.event_name == 'pull_request' }}
